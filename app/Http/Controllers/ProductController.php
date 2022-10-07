@@ -28,17 +28,16 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'product_name' => 'required|string|max:255',
-            'cost' => 'required|integer',
-            'amount_available' => 'required|integer',
-            Rule::exists('users')->where(function ($query) {
-                return $query->where('role', 'seller');
-            }),
-            'seller_id' => 'required|integer|exists:users,id',
+        $user = auth()->user();
 
-        ]);
-
+        if($user->role=='seller') {
+            $data = $request->validate([
+                'product_name' => 'required|string|max:255',
+                'cost' => 'required|integer',
+                'amount_available' => 'required|integer',
+                'seller_id' => 'integer|exists:users,id',
+            ]);
+        }
         return Product::create($data);
     }
 

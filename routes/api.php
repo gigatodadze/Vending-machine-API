@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => ['auth:sanctum']], function() {
     Route::post('buy', [\App\Http\Controllers\ProductController::class,'buy']);
+    Route::post('remove', [\App\Http\Controllers\ProductController::class,'remove']);
+
 });
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {

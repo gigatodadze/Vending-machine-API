@@ -32,10 +32,11 @@ class ProductController extends Controller
             'product_name' => 'required|string|max:255',
             'cost' => 'required|integer',
             'amount_available' => 'required|integer',
-            'seller_id' => 'required|integer',
             Rule::exists('users')->where(function ($query) {
                 return $query->where('role', 'seller');
             }),
+            'seller_id' => 'required|integer|exists:users,id',
+
         ]);
 
         return Product::create($data);
@@ -74,49 +75,42 @@ class ProductController extends Controller
         return new ProductResource(tap($product)->update($data));
     }
 
-    ///**
-    // * @param $userId
-    // * @param $productId
-    // *
-    // * @return void
-    // */
-    //public function buy($userId, $productId)
-    //{
-    //    $user = User::findOrFail($userId);
-    //    $product = Product::findOrFail($productId);
-    //    if ($user->deposit >= $product->cost) {
-    //        $product->amount_available--;
-    //        $user->deposit -= $product->cost;
-    //    }
-    //}
-
+    /**
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return \App\Http\Resources\ProductResource
+     */
     public function buy(Request $request)
     {
         $user = auth()->user();
-        //$user = $request->user();
         $data = $request->validate([
             'product_id' => 'integer|exists:products,id',
         ]);
 
-        //$user = User::findOrFail($data['user_id']);
         $product = Product::findOrFail($data['product_id']);
         if ($user->deposit >= $product->cost) {
             $product->amount_available--;
             $user->deposit -= $product->cost;
         }
         new UserResource(tap($user)->save());
+
         return new ProductResource(tap($product)->save());
-        //$product->save();
     }
 
     /**
-     * @param $product
+     * @param \Illuminate\Http\Request $request
      *
      * @return \Illuminate\Http\Response
      */
-    public function destroy($product)
+    public function remove(Request $request)
     {
-        $product->delete();
+        $user = auth()->user();
+        $product = Product::findOrFail($request->validate([
+            'product_id' => 'integer|exists:products,id',
+        ]));
+        if ($user->role == 'seller') {
+            $product->each->delete();
+        }
 
         return response()->noContent();
     }
